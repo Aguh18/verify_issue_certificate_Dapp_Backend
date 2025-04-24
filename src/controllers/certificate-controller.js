@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const { StatusCodes } = require('http-status-codes');
 const Client = require('@web3-storage/w3up-client').default;
-const { filesFromPaths } = require('files-from-path');
+
 const fs = require('fs');
 
 const create = async (req, res) => {
@@ -104,4 +104,42 @@ const create = async (req, res) => {
   }
 };
 
-module.exports = { create };
+const issueCertificate = async (req, res) => {
+  const {
+    template,
+    recipientName,
+    certificateTitle,
+    issueDate,
+    expiryDate,
+    description,
+    signature,
+    category,
+    issuerAddress,
+    issuerName,
+    targetAddress
+  } = req.body;
+
+
+  try {
+
+
+    const cid = await client.storeBlob(fs.createReadStream('./certificate.pdf'));
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Certificate issued successfully',
+      error: {},
+      data: { cid },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Error issuing certificate',
+      error: err.message,
+      data: {},
+    });
+  }
+}
+
+module.exports = { create, issueCertificate };
