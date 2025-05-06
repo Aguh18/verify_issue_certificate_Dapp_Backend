@@ -2,8 +2,8 @@ const jwt = require("jsonwebtoken");
 const { token } = require("morgan");
 require("dotenv").config();
 
-const secret = process.env.JWT_SECRET || "default_secret"; 
-const expiresIn = process.env.JWT_EXPIRES_IN || "5h";
+const secret = process.env.JWT_SECRET || "default_secret";
+const expiresIn = process.env.JWT_EXPIRES_IN || "12h";
 
 const generateToken = (payload) => {
 
@@ -15,7 +15,7 @@ const generateToken = (payload) => {
 const verifyToken = (token) => {
     try {
         let Cleantoken = token.split(' ')[1];
-        console.log(jwt.verify(Cleantoken, secret));
+
         return jwt.verify(Cleantoken, secret);
 
     } catch (error) {
