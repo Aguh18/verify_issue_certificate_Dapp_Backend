@@ -1,4 +1,4 @@
-const Client = require("@web3-storage/w3up-client");
+const Client = require('@web3-storage/w3up-client');
 
 class Web3StorageClient {
     static #instance = null;

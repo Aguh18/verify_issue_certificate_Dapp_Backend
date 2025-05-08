@@ -144,7 +144,7 @@ async function generateCertificate(params) {
         const page = await browser.newPage();
 
         // Load HTML template
-        await page.setContent(certificateHtml, { waitUntil: 'networkidle0' });
+        await page.setContent(certificateHtml, { waitUntil: 'load' });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `certificate_${cleanData.recipientName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
@@ -159,7 +159,7 @@ async function generateCertificate(params) {
 
         const pdfBuffer = fs.readFileSync(filePath);
 
-        certificatId = keccak256(pdfBuffer);
+
 
         await browser.close();
 
@@ -167,7 +167,7 @@ async function generateCertificate(params) {
         return {
             message: 'Certificate generated successfully',
             filePath: fileName,
-            certificateId: certificateId
+
         };
 
     } catch (err) {
