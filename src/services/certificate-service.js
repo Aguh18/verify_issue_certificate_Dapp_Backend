@@ -158,6 +158,9 @@ async function generateCertificate(params) {
         });
 
         const pdfBuffer = fs.readFileSync(filePath);
+        // Hitung hash keccak256 dari konten PDF
+        const certificateId = keccak256(pdfBuffer);
+        console.log('Certificate ID (hash):', certificateId);
 
 
 
@@ -167,6 +170,7 @@ async function generateCertificate(params) {
         return {
             message: 'Certificate generated successfully',
             filePath: fileName,
+            id: certificateId,
 
         };
 

@@ -21,7 +21,15 @@ class Web3StorageClient {
         if (!this.#client) {
             this.#client = await Client.create();
             const account = await this.#client.login('teguh180902@gmail.com');
-            await account.provision('did:key:z6MkmgBUoe7WRA4rSG8UoKy6dhsMN1bMgJVnCks16BfFp1wC');
+            await this.#client.capability.access.claim()
+            // const space = await this.#client.createSpace('mamang')
+            await this.#client.setCurrentSpace("did:key:z6MkoK22dFM6G2gww3zD9pncgLpJ9SgtZbGjR1zFkrshehKA")
+            try {
+                await this.#client.registerSpace('teguh180902@gmail.com', { provider: 'did:web:web3.storage' })
+            } catch (err) {
+                console.error('registration failed: ', err)
+            }
+
             console.log('✅ Web3.Storage client initialized');
         }
     }
@@ -34,7 +42,7 @@ class Web3StorageClient {
             throw new Error("Invalid file object provided");
         }
         console.log('Uploading file:', file.name);
-        const root = await this.#client.uploadDirectory([file]);
+        const root = await this.#client.uploadDirectory([file])
         const cid = root.toString();
         console.log('File uploaded with CID:', cid);
         return cid;
