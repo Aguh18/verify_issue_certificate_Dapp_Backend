@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,43 +8,43 @@ datasource db {
 }
 
 model User {
-  walletAddress String   @id // Tidak nullable, sebagai primary key
-  name          String?  // Nullable
-  email         String?  @unique // Nullable, tapi unik jika diisi
-  password      String?  // Nullable
-  createdAt     DateTime? // Nullable, tanpa default
+  walletAddress String      @id // Tidak nullable, sebagai primary key
+  name          String?     // Nullable
+  email         String?     @unique // Nullable, tapi unik jika diisi
+  password      String?     // Nullable
+  createdAt     DateTime?   // Nullable, tanpa default
+  templates     Template[]  // Relasi ke Template
 }
 
-
-// Model untuk Template
 model Template {
   id         Int       @id @default(autoincrement())
-  name       String    @unique @db.VarChar(100) // Nama template (misalnya, "Kursus Pemrograman")
-  filePath   String    @db.VarChar(255) // Path ke file template di cloud storage
+  userId     String    @db.VarChar(255)
+  user       User      @relation(fields: [userId], references: [walletAddress]) // Relasi ke User
+  name       String    @unique @db.VarChar(100) 
+  filePath   String    @db.VarChar(255) 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  certificates Certificate[] // Relasi ke Certificate
+  certificates Certificate[] 
 }
 
-// Model untuk Certificate
 model Certificate {
   id               Int       @id @default(autoincrement())
-  certificateNumber String    @unique @db.VarChar(50) // Nomor sertifikat unik (misalnya, "CERT-2025-00123")
-  templateId       Int       // ID template yang digunakan
+  certificateNumber String    @unique @db.VarChar(50)
+  templateId       Int       
   template         Template  @relation(fields: [templateId], references: [id])
-  recipientName    String    @db.VarChar(100) // Nama penerima (misalnya, "John Doe")
-  certificateTitle String    @db.VarChar(200) // Judul sertifikat (misalnya, "Kursus Python Dasar")
-  issueDate        DateTime  // Tanggal penerbitan
-  expiryDate       DateTime? // Tanggal kedaluwarsa (opsional)
-  description      String?   @db.Text // Deskripsi tambahan (opsional)
-  issuerName       String    @db.VarChar(100) // Nama issuer (misalnya, "Lembaga XYZ")
-  signaturePath    String?   @db.VarChar(255) // Path ke file tanda tangan (opsional)
-  category         String?   @db.VarChar(50) // Kategori sertifikat (misalnya, "akademik")
-  targetAddress    String    @db.VarChar(42) // Alamat wallet penerima (misalnya, "0x123...")
-  issuerAddress    String    @db.VarChar(42) // Alamat wallet issuer (misalnya, "0x456...")
-  hash             String?   @db.VarChar(64) // Hash SHA-256 sertifikat (opsional)
-  qrCodeUrl        String?   @db.VarChar(255) // URL atau path ke QR code (opsional)
-  filePath         String    @db.VarChar(255) // Path ke file PDF sertifikat
+  recipientName    String    @db.VarChar(100)
+  certificateTitle String    @db.VarChar(200)
+  issueDate        DateTime  
+  expiryDate       DateTime? 
+  description      String?   @db.Text
+  issuerName       String    @db.VarChar(100)
+  signaturePath    String?   @db.VarChar(255)
+  category         String?   @db.VarChar(50)
+  targetAddress    String    @db.VarChar(42)
+  issuerAddress    String    @db.VarChar(42)
+  hash             String?   @db.VarChar(64)
+  qrCodeUrl        String?   @db.VarChar(255)
+  filePath         String    @db.VarChar(255)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
