@@ -6,16 +6,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { keccak256 } from 'ethers';
+import { prisma } from '../config/database.js';
+import Web3StorageClient from '../config/storage.js';
+import { decodeToken } from '../utils/jwt.js';
 
-// Mendapatkan __dirname di ES Module
+
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Tentukan lokasi folder untuk menyimpan PDF
 const outputDir = path.join(__dirname, '../certificates');
 console.log('Output directory:', outputDir);
-
-// Buat folder jika belum ada
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
     console.log(`Folder created: ${outputDir}`);
@@ -31,7 +33,6 @@ async function generateCertificate(params) {
         targetAddress
     } = params;
 
-    // Validasi not null
     if (!recipientName || !issueDate || !certificateTitle || !description ||
         !category || !targetAddress) {
         const missingFields = [
@@ -44,8 +45,6 @@ async function generateCertificate(params) {
         ].filter(Boolean);
         throw new Error(`Semua field wajib diisi. Missing: ${missingFields.join(', ')}`);
     }
-
-    // Bersihkan tanda kutip dari input
     const cleanData = {
         recipientName: recipientName.replace(/"/g, ''),
         issueDate: issueDate.replace(/"/g, ''),
@@ -54,8 +53,6 @@ async function generateCertificate(params) {
         category: category.replace(/"/g, ''),
         targetAddress
     };
-
-    // HTML template sertifikat dengan styling menggunakan CSS inline
     const certificateHtml = `
         <!DOCTYPE html>
         <html lang="en">
@@ -136,37 +133,31 @@ async function generateCertificate(params) {
     `;
 
     try {
-        // Launch Puppeteer dengan opsi tambahan
+
         const browser = await puppeteer.launch({
-            headless: 'new', // Mode headless Puppeteer terbaru
+            headless: 'new',
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
 
-        // Load HTML template
+
         await page.setContent(certificateHtml, { waitUntil: 'load' });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `certificate_${cleanData.recipientName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         const filePath = path.join(outputDir, fileName);
 
-        // Generate dan simpan PDF
         await page.pdf({
-            path: filePath, // Simpan ke file
+            path: filePath,
             format: 'A4',
             printBackground: true
         });
 
         const pdfBuffer = fs.readFileSync(filePath);
-        // Hitung hash keccak256 dari konten PDF
         const certificateId = keccak256(pdfBuffer);
-        console.log('Certificate ID (hash):', certificateId);
-
 
 
         await browser.close();
-
-        // Mengembalikan informasi file dan hash
         return {
             message: 'Certificate generated successfully',
             filePath: fileName,
@@ -179,6 +170,70 @@ async function generateCertificate(params) {
         throw new Error('Error generating certificate: ' + err.message);
     }
 }
+
+async function uploadTemplate(req) {
+    // Validate req.file
+    if (!req.file) {
+        throw new Error('No file uploaded');
+    }
+
+
+    const userData = decodeToken(req.headers.authorization);
+
+    if (!userData?.walletAddress) {
+        throw new Error('Invalid token: walletAddress is missing');
+    }
+
+    let cid, filePath, fileName;
+
+    try {
+        const web3Client = Web3StorageClient.getInstance();
+        await web3Client.initialize();
+
+        const uploadDir = path.join(__dirname, '..', 'certificates', 'templates');
+        console.log('Upload directory:', uploadDir);
+        await fss.mkdir(uploadDir, { recursive: true });
+        fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+        filePath = path.join(uploadDir, fileName);
+        await fss.writeFile(filePath, req.file.buffer);
+        console.log('File saved to:', filePath);
+
+        const fileContent = await fss.readFile(filePath);
+        const file = new File([fileContent], fileName, { type: req.file.mimetype });
+
+        cid = await web3Client.uploadFile(file);
+
+        await fss.unlink(filePath);
+    } catch (err) {
+        console.error('Error uploading file:', err);
+        throw new Error('Error uploading file: ' + err.message);
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.template.create({
+                data: {
+                    user: {
+                        connect: { walletAddress: userData.walletAddress }, // Connect user relation
+                    },
+                    name: req.body.templateName,
+                    filePath: `https://${cid}.ipfs.w3s.link/${fileName}`,
+                    nameX: parseFloat(req.body.positionX), // Convert to Float
+                    nameY: parseFloat(req.body.positionY), // Handle nullable nameY
+                },
+            });
+        });
+    } catch (dbErr) {
+        console.error('Database error:', dbErr);
+        throw new Error('Database error: ' + dbErr.message);
+    }
+
+    return {
+        cid,
+        filePath,
+    };
+}
+
 
 async function verifyCertificate() {
     try {
@@ -213,4 +268,5 @@ async function verifyCertificate() {
 
 }
 
+export { generateCertificate, uploadTemplate, verifyCertificate };
 export default generateCertificate;

@@ -10,6 +10,7 @@ const upload = multer();
 
 router.post("/generate", upload.none(), authMiddleware, CertifcateController.issueCertificate);
 router.post("/verify", authMiddleware, CertifcateController.verifyCertificate);
+router.post("/upload-template", upload.single('template'), authMiddleware, CertifcateController.uploadTemplateHandler);
 
 
 module.exports = router;

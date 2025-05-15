@@ -25,7 +25,7 @@ const verifyToken = (token) => {
 
 const decodeToken = (token) => {
     let Cleantoken = token.split(' ')[1];
-    return jwt.decode(Cleantoken, { complete: true });
+    return jwt.decode(Cleantoken, { complete: true }).payload;
 }
 
 module.exports = { generateToken, verifyToken, decodeToken };

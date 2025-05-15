@@ -20,8 +20,10 @@ model Template {
   id         Int       @id @default(autoincrement())
   userId     String    @db.VarChar(255)
   user       User      @relation(fields: [userId], references: [walletAddress]) // Relasi ke User
-  name       String    @unique @db.VarChar(100) 
+  name       String    @unique @db.VarChar(255) 
   filePath   String    @db.VarChar(255) 
+  nameX      Float?    // Koordinat X untuk posisi nama (persentase, nullable)
+  nameY      Float?    // Koordinat Y untuk posisi nama (persentase, nullable)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   certificates Certificate[] 

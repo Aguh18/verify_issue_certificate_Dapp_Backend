@@ -5,14 +5,16 @@ const Client = require('@web3-storage/w3up-client').default
 const path = require('path');
 const fs = require('fs/promises');
 const fsSync = require('fs');
-const { default: generateCertificate } = require('../services/certificate-service');
+const { default: generateCertificate, uploadTemplate } = require('../services/certificate-service');
 const Web3StorageClient = require('../config/storage');
 const { keccak256 } = require('ethers');
+
 
 const create = async (req, res) => {
   // HTML template sertifikat dengan styling menggunakan CSS inline
   const certificateHtml = `
     <!DOCTYPE html>
+    
     <html lang="en">
     <head>
       <meta charset="UTF-8">
@@ -126,23 +128,17 @@ const issueCertificate = async (req, res) => {
 
     const result = await generateCertificate(req.body);
 
-    // 2. Inisialisasi Web3 Storage Client
     const web3Client = Web3StorageClient.getInstance();
     await web3Client.initialize();
 
-
     const filePath = path.join(__dirname, '..', 'certificates', result.filePath);
-    console.log('📍 File path:', filePath);
-
 
     if (!fsSync.existsSync(filePath)) {
-      console.error('❌ File tidak ditemukan (existsSync)');
       throw new Error(`File tidak ditemukan: ${filePath}`);
     }
 
 
     await fs.access(filePath, fs.constants.R_OK);
-    console.log('✅ File dapat diakses:', filePath);
 
 
     const fileContent = await fs.readFile(filePath);
@@ -177,24 +173,20 @@ async function verifyCertificate(req, res) {
   const { url } = req.body;
 
   try {
-    // Fetch the file as a stream
+
     const response = await axios({
       url,
       method: 'GET',
-      responseType: 'arraybuffer', // For binary files like PDFs
+      responseType: 'arraybuffer',
     });
 
-    // Define the output directory and file path
     const outputDir = "/home/aguhh/Documents/Skripsweet/BE skripsi/src/certificates/downloads";
-    const fileName = `certificate_${Date.now()}.pdf`; // Unique file name to avoid overwriting
-    const filePath = path.join(outputDir, fileName); // Combine directory and file name
+    const fileName = `certificate_${Date.now()}.pdf`;
+    const filePath = path.join(outputDir, fileName);
 
-
-
-    // Ensure the directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
-    // Save the file
+
     await fs.writeFile(filePath, Buffer.from(response.data));
 
     res.status(StatusCodes.OK).json({
@@ -204,7 +196,30 @@ async function verifyCertificate(req, res) {
     });
   } catch (error) {
     console.error('Error downloading file:', error.message);
-    throw error; // Re-throw for upstream handling
+    throw error;
   }
 }
-module.exports = { create, issueCertificate, verifyCertificate };
+
+async function uploadTemplateHandler(req, res) {
+  try {
+    result = await uploadTemplate(req);
+    res.status(200).json({
+      success: true,
+      message: 'Template uploaded successfully',
+      data: {
+        fileCid: "https://" + result.cid + ".ipfs.w3s.link/" + result.fileName,
+      },
+    });
+  } catch (error) {
+    console.error('Error uploading template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading template',
+      error: error.message,
+    });
+  }
+}
+
+
+
+module.exports = { create, issueCertificate, verifyCertificate, uploadTemplateHandler };

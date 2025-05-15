@@ -24,11 +24,11 @@ class Web3StorageClient {
             await this.#client.capability.access.claim()
             // const space = await this.#client.createSpace('mamang')
             await this.#client.setCurrentSpace("did:key:z6MkoK22dFM6G2gww3zD9pncgLpJ9SgtZbGjR1zFkrshehKA")
-            try {
-                await this.#client.registerSpace('teguh180902@gmail.com', { provider: 'did:web:web3.storage' })
-            } catch (err) {
-                console.error('registration failed: ', err)
-            }
+            // try {
+            //     await this.#client.registerSpace('teguh180902@gmail.com', { provider: 'did:web:web3.storage' })
+            // } catch (err) {
+            //     console.error('registration failed: ', err)
+            // }
 
             console.log('✅ Web3.Storage client initialized');
         }
