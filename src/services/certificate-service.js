@@ -9,6 +9,7 @@ import { keccak256 } from 'ethers';
 import { prisma } from '../config/database.js';
 import Web3StorageClient from '../config/storage.js';
 import { decodeToken } from '../utils/jwt.js';
+import { decode } from 'punycode';
 
 
 
@@ -268,5 +269,26 @@ async function verifyCertificate() {
 
 }
 
-export { generateCertificate, uploadTemplate, verifyCertificate };
+async function getTemplate(req) {
+    const userId = decodeToken(req.headers.authorization).walletAddress;
+    try {
+        const templates = await prisma.template.findMany({
+            where: { userId: userId },
+        });
+
+        if (!templates) {
+            console.log('Template not found');
+            throw new Error('Template not found');
+        }
+
+        return templates
+
+    } catch (error) {
+        throw new Error('Error fetching template: ' + error.message);
+
+    }
+}
+
+
+export { generateCertificate, uploadTemplate, verifyCertificate, getTemplate };
 export default generateCertificate;

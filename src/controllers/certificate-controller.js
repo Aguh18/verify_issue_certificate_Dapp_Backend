@@ -5,7 +5,7 @@ const Client = require('@web3-storage/w3up-client').default
 const path = require('path');
 const fs = require('fs/promises');
 const fsSync = require('fs');
-const { default: generateCertificate, uploadTemplate } = require('../services/certificate-service');
+const { default: generateCertificate, uploadTemplate, getTemplate } = require('../services/certificate-service');
 const Web3StorageClient = require('../config/storage');
 const { keccak256 } = require('ethers');
 
@@ -124,6 +124,8 @@ const issueCertificate = async (req, res) => {
     targetAddress
   } = req.body;
 
+
+
   try {
 
     const result = await generateCertificate(req.body);
@@ -167,6 +169,17 @@ const issueCertificate = async (req, res) => {
       data: {},
     });
   }
+
+  return res.status(StatusCodes.OK).json({
+    success: true,
+    message: 'Certificate issued successfully',
+    error: {},
+    data: {
+      fileCid: "https://example.com/certificate.pdf",
+      filePath: "certificate.pdf",
+      id: "certificateId",
+    },
+  });
 };
 
 async function verifyCertificate(req, res) {
@@ -221,5 +234,28 @@ async function uploadTemplateHandler(req, res) {
 }
 
 
+async function getTemplateHandler(req, res) {
+  try {
 
-module.exports = { create, issueCertificate, verifyCertificate, uploadTemplateHandler };
+    data = await getTemplate(req);
+
+    res.status(200).json({
+      success: true,
+      message: 'Template uploaded successfully',
+      data: {
+        templates: data,
+      },
+    });
+  } catch (error) {
+    console.error('Error uploading template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading template',
+      error: error.message,
+    });
+  }
+}
+
+
+
+module.exports = { create, issueCertificate, verifyCertificate, uploadTemplateHandler, getTemplateHandler };
